@@ -8,17 +8,16 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    libonig-dev \
     zip \
     unzip \
     git \
-    curl
-
-# Instalar extensiones de PHP necesarias para Laravel y Excel
-RUN docker-php-ext-install pdo pdo_pgsql zip mbstring
+    curl \
+    && docker-php-ext-install pdo pdo_pgsql zip mbstring
 
 # Configurar e instalar GD
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install gd
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -29,7 +28,7 @@ WORKDIR /var/www/html
 # Copiar archivos
 COPY . .
 
-# Instalar dependencias
+# Instalar dependencias de Laravel
 RUN composer install --no-dev --optimize-autoloader
 
 # Dar permisos
