@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: stma-sestion-gasto-backend
+    env: php
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      php artisan key:generate --force
+      php artisan migrate --force
+    startCommand: "php artisan serve --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
