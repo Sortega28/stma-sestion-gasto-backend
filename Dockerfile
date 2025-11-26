@@ -34,8 +34,8 @@ RUN composer install --no-dev --optimize-autoloader
 # Dar permisos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Exponer puerto
+# Exponer puerto (solo informativo para Docker/Render)
 EXPOSE 10000
 
-# Comando al iniciar
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# Comando al iniciar: usar el puerto que Render indica
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
