@@ -1,7 +1,6 @@
-# Imagen PHP FPM con herramientas necesarias
 FROM php:8.2-fpm
 
-# Instalar dependencias del sistema necesarias
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -9,33 +8,33 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libfreetype6-dev \
     libonig-dev \
-    zip \
-    unzip \
-    git \
-    curl \
+    zip unzip git curl \
     && docker-php-ext-install pdo pdo_pgsql zip mbstring
 
-# Configurar e instalar GD
+# GD
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd
 
-# Instalar Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Establecer directorio de trabajo
+# Directorio de trabajo
 WORKDIR /var/www/html
 
 # Copiar archivos
 COPY . .
 
-# Instalar dependencias de Laravel
+# Instalar dependencias Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Dar permisos
+# Permisos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Exponer puerto (solo informativo para Docker/Render)
+# EXPOSE
 EXPOSE 10000
 
-# Comando al iniciar: usar el puerto que Render indica
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# LIMPIAR CACHÉ + CARGAR CONFIG + ARRANCAR SERVIDOR
+CMD php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan config:cache && \
+    php artisan serve --host=0.0.0.0 --port=10000
