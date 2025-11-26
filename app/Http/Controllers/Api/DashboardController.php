@@ -13,19 +13,20 @@ class DashboardController extends Controller
     public function resumen(Request $request)
     {
         try {
+
             // Total gasto acumulado
-            $totalGasto = SolicitudGasto::sum('importe');
+            $totalGasto = SolicitudGasto::sum('importe') ?? 0;
 
             // Gasto mensual actual
             $hoy = Carbon::now();
             $gastoMensual = SolicitudGasto::whereYear('fechaalta', $hoy->year)
                 ->whereMonth('fechaalta', $hoy->month)
-                ->sum('importe');
+                ->sum('importe') ?? 0;
 
-            // Órdenes activas (150 = Pendiente, 160 = Validada/Aprobada)
-            $ordenesActivas = SolicitudGasto::whereIn('id_estado', [150, 160])->count();
+            // Órdenes activas
+            $ordenesActivas = SolicitudGasto::whereIn('id_estado', [150, 160])->count() ?? 0;
 
-            // Top proveedor por importe acumulado
+            // Top proveedor 
             $topProveedor = SolicitudGasto::select(
                     'nombre_prov_final as nombre',
                     DB::raw('SUM(importe) as total')
@@ -34,7 +35,14 @@ class DashboardController extends Controller
                 ->orderByDesc('total')
                 ->first();
 
-            // Últimas órdenes (con estado incluido)
+            if (!$topProveedor) {
+                $topProveedor = [
+                    'nombre' => null,
+                    'total'  => 0
+                ];
+            }
+
+            // Ultimas órdenes
             $ultimasOrdenes = SolicitudGasto::with('estadoSolicitudGasto')
                 ->orderByDesc('fechaalta')
                 ->limit(5)
@@ -56,12 +64,12 @@ class DashboardController extends Controller
                         'nombre_prov_final' => $o->nombre_prov_final,
                         'importe' => $o->importe,
                         'estado' => [
-                            'desc_corta' => $o->estadoSolicitudGasto->desc_corta ?? ''
+                            'desc_corta' => $o->estadoSolicitudGasto?->desc_corta ?? ''
                         ]
                     ];
                 });
 
-            // Evolución mensual
+            // Evolución mensual 
             $desde = Carbon::now()->subMonths(5)->startOfMonth();
 
             $evolucionMensual = SolicitudGasto::select(
@@ -71,7 +79,13 @@ class DashboardController extends Controller
                 ->where('fechaalta', '>=', $desde)
                 ->groupBy('mes')
                 ->orderBy('mes')
-                ->get();
+                ->get()
+                ->map(function ($row) {
+                    return [
+                        'mes' => $row->mes,
+                        'total' => $row->total ?? 0
+                    ];
+                });
 
             return response()->json([
                 'totalGasto'       => $totalGasto,
@@ -84,7 +98,8 @@ class DashboardController extends Controller
 
         } catch (\Throwable $e) {
             return response()->json([
-                'error' => 'Error al obtener el resumen'
+                'error' => 'Error al obtener el resumen',
+                'msg' => $e->getMessage() 
             ], 500);
         }
     }
