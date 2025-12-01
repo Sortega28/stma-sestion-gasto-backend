@@ -14,7 +14,7 @@ class UserController extends Controller
     {
         $perPage = $request->query('perPage', 10);
 
-        // Buscar por "search" o "nombre"
+        // Buscar por "nombre"
         $nombre = $request->query('search', $request->query('nombre'));
 
         $query = User::select('id', 'name', 'email', 'role', 'created_at');

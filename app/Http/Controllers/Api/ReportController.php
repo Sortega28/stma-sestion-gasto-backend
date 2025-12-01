@@ -12,7 +12,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    //CONSULTA DE REPORTES (JSON)
+    //CONSULTA BASICA DE REPORTES (JSON)
     public function index(Request $request)
     {
         try {

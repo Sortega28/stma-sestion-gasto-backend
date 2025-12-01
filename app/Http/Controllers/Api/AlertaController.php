@@ -26,13 +26,13 @@ class AlertaController extends Controller
 
         /*gasto anual REAL por proveedor basado en la tabla "solicitudgasto" y su campo fechaalta*/
         $subGastoAnual = DB::table('solicitudgasto as sg')
-    ->select(
+        ->select(
         'sg.nombre_prov_final as proveedor',
         'sg.objeto',
         DB::raw('SUM(sg.importe) AS gasto_anual')
-    )
-    ->whereYear('sg.fechaalta', $anioActual)
-    ->groupBy('sg.nombre_prov_final', 'sg.objeto');
+        )
+        ->whereYear('sg.fechaalta', $anioActual)
+        ->groupBy('sg.nombre_prov_final', 'sg.objeto');
 
          // --- ALERTAS DEL AÑO ACTUAL basadas en la columna "anio" ---
         $q = DB::table('alertas')->where('alertas.anio', $anioActual);
@@ -53,11 +53,10 @@ class AlertaController extends Controller
             $q->where('alertas.revisada', false);
         }
 
-        // JOIN con gasto anual real desde solicitudgasto
+        // JOIN con gasto anual por objeto  desde solicitudgasto
         $q->leftJoinSub($subGastoAnual, 'totales', function ($join) {
-    $join->on('totales.proveedor', '=', 'alertas.proveedor')
-         ->on('totales.objeto', '=', 'alertas.objeto');
-});
+        $join->on('totales.proveedor', '=', 'alertas.proveedor')
+         ->on('totales.objeto', '=', 'alertas.objeto');});
 
 
         // Selección final
@@ -66,7 +65,7 @@ class AlertaController extends Controller
         // Total de registros
         $total = (clone $q)->count('alertas.id');
 
-        // Datos paginados
+        // Datos por pagina
         $data = $q->orderBy('alertas.id', 'desc')
                   ->offset($offset)
                   ->limit($perPage)
