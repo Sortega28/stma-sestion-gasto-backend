@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Solicitudes (ver + listar)
     Route::get('/solicitudes',      [SolicitudGastoController::class, 'index']);
     Route::get('/solicitudes/{id}', [SolicitudGastoController::class, 'show']);
+    Route::post('/solicitudes', [SolicitudGastoController::class, 'store']);
 
     // Reportes
     Route::get('/reportes', [ReportController::class, 'index']);

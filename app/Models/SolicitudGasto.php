@@ -29,25 +29,37 @@ class SolicitudGasto extends Model
         'objeto'
     ];
 
-    // Tipo gasto
+    // Tipo de gasto
     public function tipoGasto()
     {
-        return $this->belongsTo(TipoGasto::class, 'idtipo_gasto', 'idtipo_gasto');
+        return $this->belongsTo(
+            \App\Models\TipoGasto::class,
+            'idtipo_gasto',
+            'idtipo_gasto'
+        );
     }
 
     // Unidad
     public function unidad()
     {
-        return $this->belongsTo(Unidad::class, 'id_unidad_fk', 'id_unidad_pk');
+        return $this->belongsTo(
+            \App\Models\Unidad::class,
+            'id_unidad_fk',
+            'id_unidad_pk'
+        );
     }
 
     // Proveedor
     public function proveedor()
     {
-        return $this->belongsTo(Proveedor::class, 'id_proveedor_final', 'id');
+        return $this->belongsTo(
+            \App\Models\Proveedor::class,
+            'id_proveedor_final',
+            'id'
+        );
     }
 
-    // Estado solicitud
+    // Estado de solicitud
     public function estadoSolicitudGasto()
     {
         return $this->belongsTo(

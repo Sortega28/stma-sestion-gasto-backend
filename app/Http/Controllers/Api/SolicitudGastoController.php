@@ -18,10 +18,8 @@ class SolicitudGastoController extends Controller
             $conceptos = $request->query('conceptos');
             $texto = $request->query('texto');
 
-            // Formato de conceptos
             $conceptos = $conceptos ? explode(',', $conceptos) : [];
 
-            // Mapeo de campos válidos
             $mapa = [
                 'cif'         => 'cif_prov_final',
                 'proveedor'   => 'nombre_prov_final',
@@ -33,7 +31,6 @@ class SolicitudGastoController extends Controller
 
             $conceptos = array_map(fn($c) => $mapa[$c] ?? $c, $conceptos);
 
-            // QUERY OPTIMIZADA (solo columnas necesarias)
             $query = SolicitudGasto::select(
                 'idsolicitudgasto',
                 'nombre_prov_final',
@@ -43,35 +40,27 @@ class SolicitudGastoController extends Controller
                 'objeto',
                 'id_estado',
             )
-                ->with([
-                    'estadoSolicitudGasto:id_estado,desc_corta'
-                ]);
+            ->with([
+                'estadoSolicitudGasto:id_estado,desc_corta'
+            ]);
 
             if ($texto && count($conceptos) > 0) {
-
                 $query->where(function ($q) use ($conceptos, $texto) {
-
                     foreach ($conceptos as $campo) {
-
-                        // Filtro por relación estado
                         if ($campo === 'estado') {
                             $q->orWhereHas('estadoSolicitudGasto', function ($estado) use ($texto) {
                                 $estado->where('desc_corta', 'ILIKE', "%$texto%");
                             });
                             continue;
                         }
-
-                        // Filtros directos
                         $q->orWhere($campo, 'ILIKE', "%$texto%");
                     }
                 });
             }
 
-            //  PAGINACIÓN REAL
             $data = $query->orderBy('idsolicitudgasto', 'DESC')
                           ->paginate($perPage, ['*'], 'page', $page);
 
-            // Renombrar estado
             foreach ($data as $item) {
                 $item->estado_nombre = $item->estadoSolicitudGasto->desc_corta ?? null;
             }
@@ -89,38 +78,34 @@ class SolicitudGastoController extends Controller
         }
     }
 
+    
     public function show($id)
-    {
-        try {
-            $solicitud = SolicitudGasto::select(
-                'idsolicitudgasto', 'nombre_prov_final', 'cif_prov_final',
-                'importe', 'usuario', 'objeto', 'id_estado'
-            )
-                ->with([
-                    'estadoSolicitudGasto:id_estado,desc_corta',
-                    'proveedor:id_proveedor,nombre',
-                    'tipoGasto:id_tipogasto,descripcion',
-                    'unidad:id_unidad,descripcion'
-                ])
-                ->findOrFail($id);
+{
+    try {
+        $solicitud = SolicitudGasto::with([
+            'estadoSolicitudGasto:id_estado,desc_corta',
+            'proveedor:id,desccorta',
+            'tipoGasto:idtipo_gasto,desccorta',
+            'unidad:id_unidad_pk,descripcion'
+        ])
+        ->findOrFail($id);
 
-            $solicitud->estado_nombre = $solicitud->estadoSolicitudGasto->desc_corta ?? null;
+        $solicitud->estado_nombre = $solicitud->estadoSolicitudGasto->desc_corta ?? null;
 
-            return response()->json($solicitud);
+        return response()->json($solicitud);
 
-        } catch (\Throwable $e) {
-            \Log::error("Error en GET /solicitudes/$id: " . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
+    } catch (\Throwable $e) {
+        \Log::error("Error en GET /solicitudes/$id: " . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 404);
     }
+}
 
-    // UPDATE (solo admin + auditor)
+
+
     public function update(Request $request, $id)
     {
         if (!in_array(auth()->user()->role, ['auditor', 'admin'])) {
-            return response()->json([
-                'error' => 'No tienes permisos para editar solicitudes'
-            ], 403);
+            return response()->json(['error' => 'No tienes permisos para editar solicitudes'], 403);
         }
 
         try {
@@ -138,12 +123,11 @@ class SolicitudGastoController extends Controller
         }
     }
 
+    
     public function validarMasivo(Request $request)
     {
         if (!in_array(auth()->user()->role, ['auditor', 'admin'])) {
-            return response()->json([
-                'error' => 'No tienes permisos para validar solicitudes'
-            ], 403);
+            return response()->json(['error' => 'No tienes permisos para validar solicitudes'], 403);
         }
 
         try {
@@ -165,12 +149,11 @@ class SolicitudGastoController extends Controller
         }
     }
 
+
     public function rechazarMasivo(Request $request)
     {
         if (!in_array(auth()->user()->role, ['auditor', 'admin'])) {
-            return response()->json([
-                'error' => 'No tienes permisos para rechazar solicitudes'
-            ], 403);
+            return response()->json(['error' => 'No tienes permisos para rechazar solicitudes'], 403);
         }
 
         try {
@@ -186,6 +169,43 @@ class SolicitudGastoController extends Controller
             ]);
 
         } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'codigo_proyecto'     => 'nullable|string|max:255',
+                'idtipo_gasto'        => 'nullable|integer',
+                'cif_prov_final'      => 'required|string|max:50',
+                'nombre_prov_final'   => 'required|string|max:255',
+                'id_estado'           => 'nullable|integer',
+                'id_proveedor_final'  => 'nullable|integer',
+                'id_unidad_fk'        => 'nullable|integer',
+                'fecha_pago'          => 'nullable|date',
+                'importe'             => 'required|numeric|min:0',
+                'concepto'            => 'nullable|string|max:500',
+                'id_proyecto_gpic_fk' => 'nullable|integer',
+                'objeto'              => 'required|string|max:500'
+            ]);
+
+            $validated['fechaalta'] = now();  
+            $validated['usuario'] = auth()->user()->name ?? 'Sistema';
+            $validated['id_estado'] = $validated['id_estado'] ?? 1;
+            $validated['cod_peticion'] = 'SG-' . time();
+
+            $solicitud = SolicitudGasto::create($validated);
+
+            return response()->json([
+                'message' => 'Solicitud de gasto creada correctamente',
+                'data' => $solicitud
+            ], 201);
+
+        } catch (\Throwable $e) {
+            \Log::error("Error en POST /solicitudes: " . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
