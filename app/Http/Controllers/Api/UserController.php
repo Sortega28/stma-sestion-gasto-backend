@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // LISTAR USUARIOS (con paginación + búsqueda)
+    // Listar usuarios(con paginación + búsqueda)
     public function index(Request $request)
     {
         $perPage = $request->query('perPage', 10);
@@ -40,7 +40,7 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    // CREAR USUARIO
+    // Crear usuario
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -60,13 +60,13 @@ class UserController extends Controller
         ]);
     }
 
-    // MOSTRAR USUARIO
+    // Mostrar usuario
     public function show($id)
     {
         return response()->json(User::findOrFail($id));
     }
 
-    // ACTUALIZAR USUARIO
+    // Actualizar usuario
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -91,7 +91,7 @@ class UserController extends Controller
         ]);
     }
 
-    // ELIMINAR USUARIO
+    // Eliminar usuario
     public function destroy($id)
     {
         User::findOrFail($id)->delete();

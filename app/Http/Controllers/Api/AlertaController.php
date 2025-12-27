@@ -75,7 +75,7 @@ class AlertaController extends Controller
         ]);
     }
 
-    // MARCAR ALERTA COMO REVISADA
+    // Marcar alerta como revisada
     public function updateEstado($id)
     {
         DB::table('alertas')
@@ -88,7 +88,7 @@ class AlertaController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    //REGENERAR ALERTAS (OPTIMIZADO)
+    //Regenerar alertas
 
     public function generarAlertas()
     {
@@ -99,7 +99,7 @@ class AlertaController extends Controller
             ->where('anio', $anioActual)
             ->delete();
 
-        // 2Calcular acumulados
+        // Calcular acumulados
         $acumulados = DB::table('solicitudgasto')
             ->select(
                 'nombre_prov_final as proveedor',
@@ -149,7 +149,7 @@ class AlertaController extends Controller
         ]);
     }
 
-    //CONSTRUCTOR DE ALERTAS
+    //Constructor de alertas
     private function buildAlerta($a, $umbral, $tipo, $anio)
     {
         return [

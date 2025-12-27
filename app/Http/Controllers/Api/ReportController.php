@@ -12,7 +12,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    //CONSULTA BASICA DE REPORTES (JSON)
+    //Consulta básica de reportes (JSON)
     public function index(Request $request)
     {
         try {
@@ -72,7 +72,7 @@ class ReportController extends Controller
         }
     }
 
-    // EXPORTAR A PDF
+    // Exportar a PDF
     public function exportPdf()
     {
         $solicitudes = SolicitudGasto::with(['proveedor', 'unidad', 'estadoSolicitudGasto'])
@@ -86,7 +86,7 @@ class ReportController extends Controller
     }
 
 
-    // EXPORTAR A EXCEL
+    // Exportar a EXCEL
     public function exportExcel()
     {
         return Excel::download(new SolicitudesExport, 'solicitudes_gasto.xlsx');
